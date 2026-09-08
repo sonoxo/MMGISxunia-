@@ -1,0 +1,14 @@
+{
+  "id":"xuniaverse","name":"XUNIAverse","version":"1.0.0","defaultSystem":"xunia-prime",
+  "systems":[
+    {"id":"xunia-prime","name":"XUNIA PRIME","position":[0,0,0],"star":{"name":"XO-1","radius":5,"color":"#65e8ff","intensity":5},"worlds":[
+      {"id":"earth","name":"EARTH // LIVE","kind":"earth","radius":2.2,"orbitRadius":13,"orbitSpeed":0.045,"color":"#2d73c8","renderMode":"cesium-earth","description":"Live public geospatial situational-awareness world."},
+      {"id":"xunia","name":"XUNIA","kind":"planet","radius":2.7,"orbitRadius":22,"orbitSpeed":0.028,"color":"#8c5cff","atmosphere":"#d3b6ff","description":"Synthetic forkable flagship world."},
+      {"id":"zyra","name":"ZYRA","kind":"planet","radius":1.75,"orbitRadius":30,"orbitSpeed":0.019,"color":"#23d7b2","atmosphere":"#6effd1","description":"Synthetic governance and workflow world."}
+    ]},
+    {"id":"helios-archive","name":"HELIOS ARCHIVE","position":[70,22,-42],"star":{"name":"ARCHIVE-0","radius":4,"color":"#e8c36b","intensity":4},"worlds":[
+      {"id":"mnemosyne","name":"MNEMOSYNE","kind":"planet","radius":2.1,"orbitRadius":12,"orbitSpeed":0.038,"color":"#c085ff","description":"Example fork-defined archival world."},
+      {"id":"aurelia","name":"AURELIA","kind":"planet","radius":1.45,"orbitRadius":20,"orbitSpeed":0.024,"color":"#df8d3f","description":"Example desert world."}
+    ]}
+  ]
+}
