@@ -1,0 +1,17 @@
+{
+  "schema":"xuniaverse-palantir-bridge-v1","mode":"architecture-and-export-adapter","livePalantir":false,
+  "objectTypes":[
+    {"id":"World","primaryKey":"worldId","properties":["name","systemId","kind","renderMode","radius"]},
+    {"id":"Observation","primaryKey":"observationId","properties":["layerId","source","title","latitude","longitude","observedAt","severity","provenance"]},
+    {"id":"GeoAsset","primaryKey":"assetId","properties":["assetType","name","latitude","longitude","source","observedAt","provenance"]},
+    {"id":"Incident","primaryKey":"incidentId","properties":["category","title","latitude","longitude","openedAt","source","provenance"]},
+    {"id":"Feed","primaryKey":"feedId","properties":["label","mode","provider","lastRefresh","status"]}
+  ],
+  "links":["World CONTAINS Observation","Feed PRODUCES Observation","Observation REFERENCES GeoAsset","Observation CORRELATES_WITH Incident"],
+  "actions":[
+    {"id":"AddAuthorizedFeed","mode":"human-input-required"},
+    {"id":"ExportOntologySnapshot","mode":"local-download"},
+    {"id":"PublishToFoundry","mode":"disabled-until-server-auth-and-human-approval"}
+  ],
+  "guardrails":{"browserSecrets":false,"covertPersonTracking":false,"autonomousConsequentialActions":false,"provenanceRequired":true,"humanApprovalForWrites":true}
+}

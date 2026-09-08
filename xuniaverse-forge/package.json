@@ -1,0 +1,13 @@
+{
+  "name": "xuniaverse-planetary-forge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Forkable multiverse renderer and live geospatial situational-awareness globe for XUNIAverse.",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "validate": "node validate.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
