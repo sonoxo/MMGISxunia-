@@ -1,0 +1,45 @@
+name: XUNIA Forge CI
+
+on:
+  push:
+    branches: [development, feat/geospatial-supremacy]
+  pull_request:
+    branches: [development]
+
+permissions:
+  contents: read
+
+jobs:
+  forge-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate catalog
+        working-directory: xuniaverse-forge
+        run: node validate.mjs
+      - name: Parse-check Forge modules
+        working-directory: xuniaverse-forge
+        run: |
+          node --check server.mjs
+          node --check app.js
+          node --check ui/viewer-bridge.js
+          node --check ui/supremacy.js
+          node --check ui/hud.js
+          node --check game/campaign.js
+      - name: Boot standalone Forge
+        working-directory: xuniaverse-forge
+        run: |
+          PORT=4173 node server.mjs > /tmp/xunia-forge.log 2>&1 &
+          echo $! > /tmp/xunia-forge.pid
+          for i in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /tmp/index.html; then break; fi
+            sleep 1
+          done
+          grep -q "GEOSPATIAL SUPREMACY" /tmp/index.html
+          curl --fail --silent http://127.0.0.1:4173/api/palantir/status | grep -q 'architecture-and-export-adapter'
+          curl --fail --silent http://127.0.0.1:4173/ui/supremacy.js > /dev/null
+          kill $(cat /tmp/xunia-forge.pid)

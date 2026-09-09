@@ -1,18 +1,23 @@
 {
-  "version":"1.0.0",
+  "version":"2.0.0",
   "layers":[
+    {"id":"flights","label":"CIVIL FLIGHTS","source":"osiris","route":"flights","mode":"public-passive","default":false},
     {"id":"maritime","label":"MARITIME","source":"osiris","route":"maritime","mode":"public-passive","default":false},
-    {"id":"sat_military","label":"SAT // MIL","source":"osiris","route":"satellites","mode":"public-passive","default":false},
-    {"id":"cctv","label":"CCTV","source":"osiris","route":"cctv","mode":"public-passive","default":false},
+    {"id":"sat_military","label":"SATELLITES","source":"osiris","route":"satellites","mode":"public-passive","default":false},
+    {"id":"launches","label":"SPACE MISSIONS","source":"launch-library-2","route":"launches","mode":"public-passive","default":false},
+    {"id":"traffic","label":"TRAFFIC","source":"osiris","route":"traffic","mode":"aggregate-simulated","default":false},
+    {"id":"cctv","label":"PUBLIC CAMERAS","source":"osiris","route":"cctv","mode":"public-passive","default":false},
+    {"id":"radio","label":"RADIO","source":"radio-browser","route":"radio","mode":"public-passive","default":false},
+    {"id":"bikeshare","label":"BIKESHARE","source":"citybikes","route":"bikeshare","mode":"public-passive","default":false},
     {"id":"live_news","label":"LIVE NEWS","source":"osiris","route":"news","mode":"public-passive","default":false},
     {"id":"earthquakes","label":"SEISMIC","source":"usgs","route":"earthquakes","mode":"public-passive","default":true},
     {"id":"fires","label":"FIRES","source":"eonet","route":"fires","mode":"public-passive","default":true},
     {"id":"weather","label":"WEATHER","source":"osiris","route":"weather","mode":"public-passive","default":false},
     {"id":"global_incidents","label":"INCIDENTS","source":"eonet","route":"incidents","mode":"public-passive","default":true},
     {"id":"day_night","label":"DAY // NIGHT","source":"computed","mode":"local-compute","default":true},
-    {"id":"cables","label":"CABLES","source":"adapter","mode":"authorized-geojson","default":false},
+    {"id":"cables","label":"AUTHORIZED INFRA","source":"adapter","mode":"authorized-geojson","default":false},
     {"id":"sdk_sea","label":"SDK // SEA","source":"adapter","mode":"authorized-geojson","default":false},
     {"id":"sdk_air","label":"SDK // AIR","source":"adapter","mode":"authorized-geojson","default":false},
-    {"id":"sdk_naval","label":"SDK // NAVAL","source":"adapter","mode":"authorized-geojson","default":false}
+    {"id":"sdk_naval","label":"SDK // CUSTOM","source":"adapter","mode":"authorized-geojson","default":false}
   ]
 }
