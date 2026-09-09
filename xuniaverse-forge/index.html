@@ -88,11 +88,12 @@
   </div>
 
   <div id="planetModal" class="modal-shade" role="dialog" aria-modal="true" aria-label="Create planet"><div class="planet-modal"><h2>CREATE PLANET</h2><input id="planetName" placeholder="Planet name" /><input id="planetRole" placeholder="Role / civilization function" /><div class="row"><button id="planetCancel">CANCEL</button><button id="planetSave">CREATE</button></div></div></div>
-  <div id="supSettingsShade" class="sup-settings-shade"><div class="sup-settings"><h2>POWER UP GEOSPATIAL</h2><p>Optional provider keys unlock world terrain and photorealistic 3D. Keys are kept in session storage only and are never committed to GitHub.</p><label>Cesium ion token</label><input id="supCesiumToken" type="password" autocomplete="off" placeholder="Optional — World Terrain"/><label>Google Maps 3D key</label><input id="supGoogleKey" type="password" autocomplete="off" placeholder="Optional — Photorealistic 3D Tiles"/><div class="danger-note">Restrict browser-exposed provider keys by domain and quota. XUNIA does not ship third-party credentials.</div><div class="row"><button id="supSettingsClose">CANCEL</button><button id="supPowerUp">ENABLE PROVIDERS</button></div></div></div>
+  <div id="supSettingsShade" class="sup-settings-shade"><div class="sup-settings"><h2>POWER UP GEOSPATIAL</h2><p>Optional provider keys unlock world terrain, photorealistic 3D, and live traffic. Keys are kept in session storage only and are never committed to GitHub.</p><label>Cesium ion token</label><input id="supCesiumToken" type="password" autocomplete="off" placeholder="Optional — World Terrain"/><label>Google Maps 3D key</label><input id="supGoogleKey" type="password" autocomplete="off" placeholder="Optional — Photorealistic 3D Tiles"/><div class="danger-note">Restrict browser-exposed provider keys by domain and quota. XUNIA does not ship third-party credentials.</div><div class="row"><button id="supSettingsClose">CANCEL</button><button id="supPowerUp">ENABLE PROVIDERS</button></div></div></div>
   <div id="supToast" class="sup-toast"></div>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./game/campaign.js"></script>
   <script type="module" src="./ui/hud.js"></script>
   <script type="module" src="./ui/supremacy.js"></script>
+  <script type="module" src="./ui/traffic-provider.js"></script>
 </body>
 </html>
