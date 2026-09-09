@@ -2,7 +2,7 @@ const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const R={viewer:null,selected:null,trail:null,trailPoints:[],trailTimer:null,lastDeclutter:0,brief:null,focus:null,coverage:null};
 
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const prop=(e,k)=>{try{const p=e?.properties?.[k];return p?.getValue?p.getValue(Cesium.JulianDate.now()):p}catch{return null}};
 const label=e=>String(prop(e,'title')||prop(e,'callsign')||prop(e,'name')||prop(e,'id')||e?.name||'CONTACT');
 const layer=e=>String(prop(e,'layerId')||prop(e,'_feed')||'contact').toLowerCase();
