@@ -1,12 +1,13 @@
 {
-  "version":"2.0.0",
+  "version":"2.1.0",
   "layers":[
     {"id":"flights","label":"CIVIL FLIGHTS","source":"osiris","route":"flights","mode":"public-passive","default":false},
     {"id":"maritime","label":"MARITIME","source":"osiris","route":"maritime","mode":"public-passive","default":false},
     {"id":"sat_military","label":"SATELLITES","source":"osiris","route":"satellites","mode":"public-passive","default":false},
     {"id":"launches","label":"SPACE MISSIONS","source":"launch-library-2","route":"launches","mode":"public-passive","default":false},
-    {"id":"traffic","label":"TRAFFIC","source":"osiris","route":"traffic","mode":"aggregate-simulated","default":false},
+    {"id":"traffic","label":"TRAFFIC","source":"tomtom-client","route":"traffic","mode":"aggregate-live-key","default":false},
     {"id":"cctv","label":"PUBLIC CAMERAS","source":"osiris","route":"cctv","mode":"public-passive","default":false},
+    {"id":"datacenters","label":"DATA CENTERS","source":"peeringdb","route":"datacenters","mode":"public-passive","default":false},
     {"id":"radio","label":"RADIO","source":"radio-browser","route":"radio","mode":"public-passive","default":false},
     {"id":"bikeshare","label":"BIKESHARE","source":"citybikes","route":"bikeshare","mode":"public-passive","default":false},
     {"id":"live_news","label":"LIVE NEWS","source":"osiris","route":"news","mode":"public-passive","default":false},

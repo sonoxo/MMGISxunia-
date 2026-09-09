@@ -29,6 +29,7 @@ jobs:
           node --check ui/viewer-bridge.js
           node --check ui/supremacy.js
           node --check ui/traffic-provider.js
+          node --check ui/reference-cinematic.js
           node --check ui/hud.js
           node --check game/campaign.js
       - name: Boot standalone Forge
@@ -45,4 +46,5 @@ jobs:
           curl --fail --silent http://127.0.0.1:4173/api/feed?id=traffic | grep -q 'TomTom Traffic Flow'
           curl --fail --silent http://127.0.0.1:4173/ui/supremacy.js > /dev/null
           curl --fail --silent http://127.0.0.1:4173/ui/traffic-provider.js > /dev/null
+          curl --fail --silent http://127.0.0.1:4173/ui/reference-cinematic.js > /dev/null
           kill $(cat /tmp/xunia-forge.pid)
