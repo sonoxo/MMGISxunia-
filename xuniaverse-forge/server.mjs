@@ -10,7 +10,7 @@ const ALLOW_OSIRIS=process.env.ALLOW_OSIRIS_UPSTREAM!=='false';
 const GITHUB_OWNER=process.env.GITHUB_OWNER||'sonoxo';
 const GITHUB_TOKEN=process.env.GITHUB_TOKEN||'';
 const cache=new Map();
-const passiveRoutes={flights:'/api/flights',maritime:'/api/maritime',sat_military:'/api/satellites',cctv:'/api/cctv',live_news:'/api/news',weather:'/api/weather',traffic:'/api/traffic'};
+const passiveRoutes={flights:'/api/flights',maritime:'/api/maritime',sat_military:'/api/satellites',cctv:'/api/cctv',live_news:'/api/news',weather:'/api/weather'};
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};
 
 function json(res,status,data){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(data));}
@@ -51,6 +51,7 @@ async function feed(req,res,url){
     if(id==='launches')return json(res,200,await launchGeo());
     if(id==='radio')return json(res,200,await radioGeo());
     if(id==='bikeshare')return json(res,200,await bikeGeo());
+    if(id==='traffic')return json(res,200,{type:'FeatureCollection',features:[],meta:{provider:'TomTom Traffic Flow',requiresClientKey:true,render:'raster-overlay'}});
     const route=passiveRoutes[id];if(!route)return json(res,404,{error:'unknown feed'});
     if(!ALLOW_OSIRIS)return json(res,503,{error:'public upstream disabled'});
     const raw=await cachedFetch(`osiris:${id}`,`${OSIRIS_UPSTREAM}${route}`,id==='flights'?30000:90000);return json(res,200,normalizeGeo(raw,id));
