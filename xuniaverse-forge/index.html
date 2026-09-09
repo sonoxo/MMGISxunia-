@@ -9,28 +9,29 @@
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.121.0/Build/Cesium/Widgets/widgets.css" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./game/game.css" />
+  <link rel="stylesheet" href="./high-render.css" />
   <script src="https://unpkg.com/cesium@1.121.0/Build/Cesium/Cesium.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.1/dist/satellite.min.js"></script>
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.179.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.179.1/examples/jsm/"}}</script>
 </head>
 <body>
   <div id="boot" class="boot"><div class="boot-mark">X</div><div><b>XUNIAverse</b><span>PLANETARY FORGE // MAX RENDER</span></div></div>
-  <div id="app" class="app is-universe">
+  <div id="app" class="app is-universe max-render">
     <header class="topbar glass">
-      <div class="brand"><span class="brand-mark">X</span><div><strong>XUNIAverse</strong><small>PLANETARY FORGE // GOD'S-EYE PUBLIC DATA VIEW</small></div></div>
-      <div class="top-metrics">
-        <span><i class="pulse"></i><b id="statusText">SYSTEM NOMINAL</b></span>
-        <span>OBJECTS <b id="objectCount">0000</b></span>
-        <span>FPS <b id="fps">60</b></span>
-        <span id="clock">--:--:--Z</span>
-      </div>
+      <div class="brand"><span class="brand-mark">✦</span><div><strong>XUNIAverse</strong><small>PLANETARY INTELLIGENCE. HUMAN PROGRESS. MULTIVERSE.</small></div></div>
+      <nav class="xunia-nav" aria-label="Primary">
+        <button data-tab="LIVE EARTH" class="active">LIVE EARTH</button><button data-tab="MULTIVERSE">MULTIVERSE</button><button data-tab="CIVILIZATIONS">CIVILIZATIONS</button><button data-tab="BUILD">BUILD</button><button data-tab="MARKET">MARKET</button><button data-tab="DAO">DAO</button><button data-tab="RESEARCH">RESEARCH</button><button data-tab="ABOUT">ABOUT</button>
+      </nav>
+      <input id="globalSearch" class="global-search" aria-label="Search" placeholder="⌕  Search locations, entities, repos, systems…" />
+      <div class="user-chip"><span class="user-avatar">X</span><div><b>sonoxo</b><br><span>CIVILIZATION LEVEL 5</span></div></div>
+      <div class="top-metrics"><span><i class="pulse"></i><b id="statusText">SYSTEM NOMINAL</b></span><span>OBJECTS <b id="objectCount">0000</b></span><span>FPS <b id="fps">60</b></span><span id="clock">--:--:--Z</span></div>
       <div class="top-actions"><button id="universeBtn" class="active">UNIVERSE</button><button id="earthBtn">LIVE EARTH</button><button id="maxBtn">MAX RENDER</button></div>
     </header>
 
     <aside class="rail rail-left glass">
       <section><div class="section-title"><span>NAVIGATION</span><b id="modeLabel">MULTIVERSE</b></div><div id="systemList" class="system-list"></div></section>
-      <section><div class="section-title"><span>INTELLIGENCE LAYERS</span><b id="layerCount">0/13</b></div><div id="layerList" class="layer-list"></div></section>
-      <section class="feed-config"><div class="section-title"><span>AUTHORIZED OVERLAY</span><b>GEOJSON</b></div><input id="overlayUrl" placeholder="https://…/feed.geojson" autocomplete="off"/><button id="overlayBtn">LOAD OVERLAY</button><small>Public or authorized data only. Secrets stay server-side.</small></section>
+      <section><div class="section-title"><span>LAYERS</span><b id="layerCount">0/13</b></div><div id="layerList" class="layer-list"></div></section>
+      <section class="feed-config"><div class="section-title"><span>AUTHORIZED OVERLAY</span><b>GEOJSON</b></div><input id="overlayUrl" placeholder="https://…/feed.geojson" autocomplete="off"/><button id="overlayBtn">+ ADD LAYER</button><small>Public or authorized data only. Secrets stay server-side.</small></section>
     </aside>
 
     <main class="stage">
@@ -39,19 +40,34 @@
       <div class="reticle"><span></span><i></i><b></b></div>
       <div class="stage-banner glass"><span id="worldKicker">SYSTEM // XUNIA PRIME</span><strong id="worldTitle">XUNIA PRIME</strong><small id="worldMeta">SYNTHETIC MULTIVERSE // INTERACTIVE ORBITAL MODEL</small></div>
       <div class="coordinates glass"><span>LAT <b id="lat">--</b></span><span>LON <b id="lon">--</b></span><span>ALT <b id="alt">--</b></span><span>UTC <b id="utc">--</b></span></div>
-      <div class="timeline glass"><button id="pauseBtn">Ⅱ</button><div class="timeline-track"><i></i><span id="timelineNow"></span></div><button id="homeBtn">⌂</button></div>
+      <div class="timeline glass"><button id="pauseBtn" aria-label="Pause timeline">Ⅱ</button><div class="timeline-track"><i></i><span id="timelineNow"></span></div><button id="homeBtn" aria-label="Reset view">⌂</button></div>
     </main>
 
     <aside class="rail rail-right glass">
-      <section><div class="section-title"><span>ONTOLOGY INSPECTOR</span><b>PALANTIR-STYLE</b></div><div id="inspector" class="inspector"><div class="empty-state"><b>NO OBJECT SELECTED</b><span>Select a world or live geospatial object.</span></div></div></section>
+      <section><div class="section-title"><span>PALANTIR</span><b>ONTOLOGY INSPECTOR</b></div><div id="inspector" class="inspector"><div class="empty-state"><b>NO OBJECT SELECTED</b><span>Select a world or live geospatial object.</span></div></div></section>
       <section><div class="section-title"><span>CIVILIZATION CAMPAIGN</span><b id="civState">GITHUB SYNC</b></div><div id="githubCivilization" class="github-civilization"><div class="empty-state"><b>SYNCING GITHUB</b><span>Building civilization state from repositories.</span></div></div></section>
-      <section><div class="section-title"><span>LIVE INTELLIGENCE</span><b id="eventCount">0 EVENTS</b></div><div id="intelFeed" class="intel-feed"></div></section>
+      <section><div class="section-title"><span>LIVE NEWS + EVENTS</span><b id="eventCount">0 EVENTS</b></div><div id="intelFeed" class="intel-feed"></div></section>
       <section><div class="section-title"><span>DATA PLANE</span><b id="palantirState">LOCAL ONTOLOGY</b></div><div class="data-plane"><div><span>Foundry</span><b>ADAPTER</b></div><div><span>Ontology</span><b>ACTIVE</b></div><div><span>AIP</span><b>GATED</b></div><div><span>Actions</span><b>APPROVAL</b></div></div><button id="exportBtn">EXPORT ONTOLOGY SNAPSHOT</button></section>
     </aside>
 
-    <footer class="statusbar glass"><span>XUNIA // MMGIS // CESIUM // THREE.JS</span><span>GITHUB CIVILIZATION ENGINE</span><span>PUBLIC + AUTHORIZED DATA</span><span id="sourceStatus">SOURCES READY</span></footer>
+    <section class="bottom-command" aria-label="Civilization command deck">
+      <article class="command-card civ-card">
+        <h3>YOUR CIVILIZATION</h3>
+        <div class="civ-head"><div class="civ-glyph">●</div><div class="civ-name"><b>sonoxo</b><span>Level 5 · <i id="civEra">Planetary Era</i></span></div></div>
+        <div class="xp-track"><i id="xpFill"></i></div>
+        <div class="civ-stats"><div class="civ-stat"><span>Repositories</span><b id="repoCount">47</b></div><div class="civ-stat"><span>Stars</span><b id="starCount">892</b></div><div class="civ-stat"><span>Forks</span><b id="forkCount">214</b></div><div class="civ-stat"><span>Civ Score</span><b id="civScore">12,450</b></div></div>
+        <div class="civ-actions"><button id="viewCivilization">VIEW CIVILIZATION</button><button id="syncGithub">SYNC GITHUB</button></div>
+      </article>
+      <article class="command-card planet-card"><h3>YOUR PLANETARY SYSTEM</h3><div id="planetStrip" class="planet-strip"></div></article>
+      <article class="command-card activity-card"><h3>RECENT ACTIVITY</h3><div id="activityList" class="activity-list"></div></article>
+    </section>
+
+    <footer class="statusbar glass"><span>XUNIAverse // OPEN SOURCE PLANETARY INTELLIGENCE</span><span>MMGIS // CESIUM // THREE.JS</span><span>PUBLIC + AUTHORIZED DATA</span><span id="sourceStatus">REAL WORLD. VIRTUAL WORLDS. INFINITE POSSIBILITIES.</span></footer>
   </div>
+
+  <div id="planetModal" class="modal-shade" role="dialog" aria-modal="true" aria-label="Create planet"><div class="planet-modal"><h2>CREATE PLANET</h2><input id="planetName" placeholder="Planet name" /><input id="planetRole" placeholder="Role / civilization function" /><div class="row"><button id="planetCancel">CANCEL</button><button id="planetSave">CREATE</button></div></div></div>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./game/campaign.js"></script>
+  <script type="module" src="./ui/hud.js"></script>
 </body>
 </html>
