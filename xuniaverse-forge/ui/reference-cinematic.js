@@ -1,3 +1,4 @@
+import './sharelink-v2.js';
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const R={viewer:null,selected:null,trail:null,trailPoints:[],trailTimer:null,lastDeclutter:0,brief:null,focus:null,coverage:null};
