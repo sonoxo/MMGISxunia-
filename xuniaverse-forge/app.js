@@ -5,16 +5,256 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
-const state={universe:null,layers:[],active:new Set(),mode:'universe',viewer:null,scene:null,camera:null,renderer:null,composer:null,controls:null,objects:[],worldMeshes:[],feedEntities:new Map(),observations:[],selected:null,paused:false,max:true,frames:0,lastFps:performance.now()};
+const state={universe:null,layers:[],active:new Set(),mode:'universe',viewer:null,scene:null,camera:null,renderer:null,composer:null,controls:null,objects:[],worldMeshes:[],feedEntities:new Map(),observations:[],selected:null,paused:false,max:true,frames:0,lastFps:performance.now(),layerUpdatedAt:new Map(),layerAttemptAt:new Map(),refreshInFlight:new Set(),realtimeTimer:null,realtimeHudTimer:null};
 const ui={boot:$('#boot'),app:$('#app'),universe:$('#universeCanvas'),cesium:$('#cesium'),systems:$('#systemList'),layers:$('#layerList'),inspector:$('#inspector'),feed:$('#intelFeed'),objectCount:$('#objectCount'),eventCount:$('#eventCount'),layerCount:$('#layerCount'),status:$('#statusText'),source:$('#sourceStatus'),fps:$('#fps'),clock:$('#clock'),title:$('#worldTitle'),kicker:$('#worldKicker'),meta:$('#worldMeta'),mode:$('#modeLabel'),lat:$('#lat'),lon:$('#lon'),alt:$('#alt'),utc:$('#utc'),timeline:$('#timelineNow'),palantir:$('#palantirState')};
 const layerColors={earthquakes:'#ffb34d',fires:'#ff5b64',global_incidents:'#d871ff',maritime:'#4fd7ff',sat_military:'#e8c36b',cctv:'#81f2c0',live_news:'#ef70a6',weather:'#74a7ff',cables:'#57b9cc',sdk_sea:'#2ce5c2',sdk_air:'#98d7ff',sdk_naval:'#8d91ff'};
+
+const realtimeCadence={
+  flights:30000,
+  earthquakes:60000,
+  live_news:90000,
+  weather:90000,
+  fires:120000,
+  global_incidents:120000,
+  launches:300000,
+  radio:300000,
+  bikeshare:600000,
+  datacenters:900000
+};
+
+const realtimeEligible=new Set(Object.keys(realtimeCadence));
+
+function syncPrimaryNav(mode){
+  const wanted=mode==='earth'?'LIVE EARTH':'MULTIVERSE';
+
+  $$('.xunia-nav button[data-tab]').forEach(button=>{
+    if(
+      button.dataset.tab==='LIVE EARTH' ||
+      button.dataset.tab==='MULTIVERSE'
+    ){
+      button.classList.toggle(
+        'active',
+        button.dataset.tab===wanted
+      );
+    }
+  });
+}
+
+function ensureRealityHud(){
+  let hud=$('#xunia-reality-hud');
+  if(hud)return hud;
+
+  const style=document.createElement('style');
+  style.id='xunia-reality-style';
+
+  style.textContent=`
+    #xunia-reality-hud{
+      position:absolute;
+      z-index:44;
+      left:14px;
+      top:96px;
+      min-width:320px;
+      padding:9px 11px;
+      box-sizing:border-box;
+      border:1px solid rgba(80,215,255,.48);
+      border-radius:7px;
+      background:rgba(1,10,18,.92);
+      box-shadow:0 0 26px rgba(54,204,255,.13);
+      backdrop-filter:blur(12px);
+      pointer-events:none;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace
+    }
+
+    #xunia-reality-hud .xr-mode{
+      font-size:9px;
+      font-weight:900;
+      letter-spacing:.12em
+    }
+
+    #xunia-reality-hud .xr-detail{
+      margin-top:4px;
+      color:#789dad;
+      font-size:7px;
+      line-height:1.55
+    }
+
+    #xunia-reality-hud.synthetic{
+      border-color:rgba(174,109,255,.6)
+    }
+
+    #xunia-reality-hud.synthetic .xr-mode{
+      color:#c598ff
+    }
+
+    #xunia-reality-hud.earth .xr-mode{
+      color:#57f1a8
+    }
+
+    #xunia-reality-hud.stale .xr-mode{
+      color:#ffbf67
+    }
+  `;
+
+  document.head.appendChild(style);
+
+  hud=document.createElement('div');
+  hud.id='xunia-reality-hud';
+
+  $('.stage')?.appendChild(hud);
+
+  return hud;
+}
+
+function formatAge(ms){
+  const sec=Math.floor(ms/1000);
+
+  if(sec<2)return 'NOW';
+  if(sec<60)return `${sec}s AGO`;
+
+  const min=Math.floor(sec/60);
+
+  if(min<60)return `${min}m AGO`;
+
+  return `${Math.floor(min/60)}h AGO`;
+}
+
+function updateRealityHud(){
+  const hud=ensureRealityHud();
+
+  if(!hud)return;
+
+  hud.className='';
+
+  if(state.mode!=='earth'){
+    hud.classList.add('synthetic');
+
+    hud.innerHTML=`
+      <div class="xr-mode">
+        SIMULATED MULTIVERSE
+      </div>
+
+      <div class="xr-detail">
+        THREE.JS SYNTHETIC PLANETS<br>
+        NOT REAL ASTRONOMICAL TELEMETRY<br>
+        ORBIT MOTION = LOCAL SIMULATION
+      </div>
+    `;
+
+    return;
+  }
+
+  hud.classList.add('earth');
+
+  const feeds=[...state.active]
+    .filter(id=>realtimeEligible.has(id));
+
+  const successes=feeds
+    .map(id=>state.layerUpdatedAt.get(id))
+    .filter(Boolean);
+
+  const latest=successes.length
+    ? Math.max(...successes)
+    : null;
+
+  let next=null;
+
+  for(const id of feeds){
+    const base=
+      state.layerUpdatedAt.get(id) ||
+      state.layerAttemptAt.get(id);
+
+    const remaining=!base
+      ? 0
+      : Math.max(
+          0,
+          realtimeCadence[id]-(Date.now()-base)
+        );
+
+    next=next===null
+      ? remaining
+      : Math.min(next,remaining);
+  }
+
+  const stale=
+    latest &&
+    Date.now()-latest > 20*60*1000;
+
+  if(stale){
+    hud.classList.add('stale');
+  }
+
+  hud.innerHTML=`
+    <div class="xr-mode">
+      ${stale?'EARTH DATA STALE':'EARTH AUTO-REFRESH ACTIVE'}
+    </div>
+
+    <div class="xr-detail">
+      REAL-WORLD PUBLIC / AUTHORIZED SOURCES<br>
+      AUTO-REFRESH FEEDS: ${feeds.length}<br>
+      LAST SUCCESS: ${latest?formatAge(Date.now()-latest):'WAITING'}<br>
+      NEXT POLL: ${next===null?'N/A':Math.ceil(next/1000)+'s'}
+    </div>
+  `;
+}
+
+function stopRealtimePolling(){
+  if(state.realtimeTimer){
+    clearInterval(state.realtimeTimer);
+    state.realtimeTimer=null;
+  }
+
+  if(state.realtimeHudTimer){
+    clearInterval(state.realtimeHudTimer);
+    state.realtimeHudTimer=null;
+  }
+}
+
+function startRealtimePolling(){
+  stopRealtimePolling();
+
+  updateRealityHud();
+
+  state.realtimeHudTimer=setInterval(
+    updateRealityHud,
+    1000
+  );
+
+  state.realtimeTimer=setInterval(()=>{
+    if(
+      state.mode!=='earth' ||
+      document.hidden
+    ){
+      return;
+    }
+
+    const now=Date.now();
+
+    for(const id of state.active){
+      if(!realtimeEligible.has(id)){
+        continue;
+      }
+
+      const last=
+        state.layerUpdatedAt.get(id) ||
+        state.layerAttemptAt.get(id) ||
+        0;
+
+      if(
+        now-last >= realtimeCadence[id]
+      ){
+        loadLayer(id,true);
+      }
+    }
+  },5000);
+}
+
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const formatNum=n=>String(n).padStart(4,'0');
 
 async function boot(){
   const [universe,layers]=await Promise.all([fetch('./catalog/universe.json').then(r=>r.json()),fetch('./catalog/layers.json').then(r=>r.json())]);state.universe=universe;state.layers=layers.layers;
   const qs=new URLSearchParams(location.search);const requested=(qs.get('layers')||'').split(',').filter(Boolean);for(const l of state.layers)if(requested.length?requested.includes(l.id):l.default)state.active.add(l.id);
-  renderSystems();renderLayerControls();initUniverse();wire();tickClock();setInterval(tickClock,1000);setTimeout(()=>ui.boot.classList.add('off'),650);
+  renderSystems();renderLayerControls();initUniverse();wire();syncPrimaryNav('universe');ensureRealityHud();updateRealityHud();tickClock();setInterval(tickClock,1000);setTimeout(()=>ui.boot.classList.add('off'),650);
   const earthRequested=qs.get('view')==='earth';if(earthRequested)enterEarth();
 }
 
@@ -49,20 +289,322 @@ function pickWorld(e){if(state.mode!=='universe')return;const rect=state.rendere
 function selectWorld(world,system){state.selected={type:'World',...world,systemId:system.id};ui.kicker.textContent=`SYSTEM // ${system.name}`;ui.title.textContent=world.name;ui.meta.textContent=(world.description||'').toUpperCase();inspect(state.selected);}
 
 async function enterEarth(){
-  if(state.mode==='earth')return;state.mode='earth';ui.app.classList.remove('is-universe');ui.universe.classList.add('hidden');ui.cesium.classList.remove('hidden');ui.mode.textContent='LIVE EARTH';ui.kicker.textContent='XUNIA // LIVE PLANET';ui.title.textContent='EARTH // GOD’S-EYE VIEW';ui.meta.textContent='PUBLIC + AUTHORIZED REAL-WORLD GEOSPATIAL DATA';$('#earthBtn').classList.add('active');$('#universeBtn').classList.remove('active');syncUrl();
-  if(!state.viewer)initCesium();await refreshActiveLayers();
+  if(state.mode==='earth'){
+    syncPrimaryNav('earth');
+    startRealtimePolling();
+    updateRealityHud();
+    return;
+  }
+
+  state.mode='earth';
+
+  ui.app.classList.remove('is-universe');
+  ui.universe.classList.add('hidden');
+  ui.cesium.classList.remove('hidden');
+
+  ui.mode.textContent='LIVE EARTH';
+  ui.kicker.textContent='XUNIA // LIVE PLANET';
+  ui.title.textContent='EARTH // REAL-WORLD DATA';
+  ui.meta.textContent='PUBLIC + AUTHORIZED DATA // AUTO-REFRESHED SOURCE SNAPSHOTS';
+
+  $('#earthBtn').classList.add('active');
+  $('#universeBtn').classList.remove('active');
+
+  syncPrimaryNav('earth');
+  syncUrl();
+
+  if(!state.viewer){
+    initCesium();
+  }
+
+  await refreshActiveLayers();
+
+  startRealtimePolling();
+  updateRealityHud();
 }
-function enterUniverse(){state.mode='universe';ui.cesium.classList.add('hidden');ui.universe.classList.remove('hidden');ui.mode.textContent='MULTIVERSE';ui.kicker.textContent='SYSTEM // XUNIA PRIME';ui.title.textContent='XUNIA PRIME';ui.meta.textContent='SYNTHETIC MULTIVERSE // INTERACTIVE ORBITAL MODEL';$('#universeBtn').classList.add('active');$('#earthBtn').classList.remove('active');syncUrl();}
+
+function enterUniverse(){
+  state.mode='universe';
+
+  stopRealtimePolling();
+
+  ui.cesium.classList.add('hidden');
+  ui.universe.classList.remove('hidden');
+
+  ui.mode.textContent='MULTIVERSE';
+  ui.kicker.textContent='SYSTEM // XUNIA PRIME';
+  ui.title.textContent='XUNIA PRIME';
+  ui.meta.textContent='SYNTHETIC MULTIVERSE // SIMULATED ORBITS // NOT REAL TELEMETRY';
+
+  $('#universeBtn').classList.add('active');
+  $('#earthBtn').classList.remove('active');
+
+  syncPrimaryNav('universe');
+  syncUrl();
+  updateRealityHud();
+}
+
 function initCesium(){
-  Cesium.Ion.defaultAccessToken='';const viewer=state.viewer=new Cesium.Viewer('cesium',{baseLayer:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,vrButton:false,selectionIndicator:true,infoBox:false,shouldAnimate:true,terrainProvider:new Cesium.EllipsoidTerrainProvider()});
+  Cesium.Ion.defaultAccessToken='';const viewer=state.viewer=new Cesium.Viewer('cesium',{baseLayer:false,baseLayerPicker:false,geocoder:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,vrButton:false,selectionIndicator:true,infoBox:false,shouldAnimate:true,terrainProvider:new Cesium.EllipsoidTerrainProvider()});window.__XUNIA_VIEWER__=viewer;window.__XUNIA_VIEWER_READY__=true;window.dispatchEvent(new CustomEvent('xunia:viewer-ready',{detail:viewer}));
   viewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',credit:'© OpenStreetMap contributors',maximumLevel:19}));viewer.scene.globe.enableLighting=true;viewer.scene.globe.showGroundAtmosphere=true;viewer.scene.highDynamicRange=true;viewer.scene.postProcessStages.fxaa.enabled=true;viewer.resolutionScale=Math.min(devicePixelRatio,1.75);viewer.scene.skyAtmosphere.show=true;viewer.camera.flyHome(0);
   const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);handler.setInputAction(click=>{const picked=viewer.scene.pick(click.position);if(picked?.id?.properties){const p={};for(const k of picked.id.properties.propertyNames||[])p[k]=picked.id.properties[k].getValue(Cesium.JulianDate.now());inspect({type:'Observation',...p});}const cart=viewer.camera.pickEllipsoid(click.position,viewer.scene.globe.ellipsoid);if(cart){const c=Cesium.Cartographic.fromCartesian(cart);ui.lat.textContent=Cesium.Math.toDegrees(c.latitude).toFixed(4);ui.lon.textContent=Cesium.Math.toDegrees(c.longitude).toFixed(4)}},Cesium.ScreenSpaceEventType.LEFT_CLICK);
   viewer.camera.changed.addEventListener(()=>{const c=viewer.camera.positionCartographic;ui.alt.textContent=`${Math.round(c.height/1000)} km`;ui.lat.textContent=Cesium.Math.toDegrees(c.latitude).toFixed(4);ui.lon.textContent=Cesium.Math.toDegrees(c.longitude).toFixed(4)});viewer.camera.percentageChanged=.02;
 }
 
 async function refreshActiveLayers(){for(const id of state.active)await loadLayer(id);refreshCounts();}
-async function loadLayer(id){if(id==='day_night'){if(state.viewer)state.viewer.scene.globe.enableLighting=true;return}if(['cables','sdk_sea','sdk_air','sdk_naval'].includes(id)){setSource(`ADAPTER ${id.toUpperCase()} READY`);return}if(state.feedEntities.has(id))return;const chip=$(`[data-layer="${id}"]`);try{chip?.classList.remove('error');setSource(`LOADING ${id.toUpperCase()}`);const r=await fetch(`/api/feed?id=${encodeURIComponent(id)}`);if(!r.ok)throw new Error((await r.json()).error||`HTTP ${r.status}`);const geo=await r.json();const group=[];for(const f of geo.features||[]){if(f.geometry?.type!=='Point')continue;const [lon,lat]=f.geometry.coordinates;const props=f.properties||{};const title=props.title||props.name||props.callsign||props.id||props._feed||id;const severity=String(props.severity||props.mag||'info');const color=Cesium.Color.fromCssColorString(layerColors[id]||'#66e4ff');const e=state.viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(Number(lon),Number(lat),1000),point:{pixelSize:id==='earthquakes'?Math.min(18,7+Number(props.mag||0)*1.7):8,color,outlineColor:Cesium.Color.BLACK,outlineWidth:1,disableDepthTestDistance:5e7},properties:{...props,layerId:id,source:props.source||id,title,latitude:lat,longitude:lon,severity}});group.push(e);pushObservation(id,title,lat,lon,severity,props)}state.feedEntities.set(id,group);setSource(`${id.toUpperCase()} ${group.length} OBJECTS`);refreshCounts();}catch(err){chip?.classList.add('error');setSource(`${id.toUpperCase()} UNAVAILABLE`);console.warn(id,err)}}
-function unloadLayer(id){for(const e of state.feedEntities.get(id)||[])state.viewer?.entities.remove(e);state.feedEntities.delete(id);state.observations=state.observations.filter(o=>o.layerId!==id);refreshFeed();refreshCounts();if(id==='day_night'&&state.viewer)state.viewer.scene.globe.enableLighting=false;}
+async function loadLayer(id,force=false){
+  if(id==='day_night'){
+    if(state.viewer){
+      state.viewer.scene.globe.enableLighting=true;
+    }
+
+    return;
+  }
+
+  if(
+    ['cables','sdk_sea','sdk_air','sdk_naval']
+      .includes(id)
+  ){
+    setSource(
+      `ADAPTER ${id.toUpperCase()} READY`
+    );
+
+    return;
+  }
+
+  if(state.refreshInFlight.has(id)){
+    return;
+  }
+
+  if(
+    state.feedEntities.has(id) &&
+    !force
+  ){
+    return;
+  }
+
+  const chip=
+    $(`[data-layer="${id}"]`);
+
+  state.refreshInFlight.add(id);
+  state.layerAttemptAt.set(id,Date.now());
+
+  try{
+    chip?.classList.remove('error');
+
+    setSource(
+      `${force?'REFRESHING':'LOADING'} ${id.toUpperCase()}`
+    );
+
+    const response=await fetch(
+      `/api/feed?id=${encodeURIComponent(id)}&t=${Date.now()}`,
+      {
+        cache:'no-store'
+      }
+    );
+
+    if(!response.ok){
+      let reason=`HTTP ${response.status}`;
+
+      try{
+        reason=
+          (await response.json()).error ||
+          reason;
+      }catch(_){}
+
+      throw new Error(reason);
+    }
+
+    const geo=
+      await response.json();
+
+    const features=
+      (geo.features||[])
+      .filter(
+        f=>
+          f.geometry?.type==='Point'
+      );
+
+    const oldEntities=
+      state.feedEntities.get(id) ||
+      [];
+
+    /*
+      New upstream response is already valid here.
+      Only now replace the previous good snapshot.
+    */
+    for(const entity of oldEntities){
+      state.viewer?.entities.remove(entity);
+    }
+
+    state.feedEntities.delete(id);
+
+    state.observations=
+      state.observations.filter(
+        observation=>
+          observation.layerId!==id
+      );
+
+    const group=[];
+    const observations=[];
+
+    for(const feature of features){
+      const [lon,lat]=
+        feature.geometry.coordinates;
+
+      const props=
+        feature.properties || {};
+
+      const title=
+        props.title ||
+        props.name ||
+        props.callsign ||
+        props.id ||
+        props._feed ||
+        id;
+
+      const severity=
+        String(
+          props.severity ||
+          props.mag ||
+          'info'
+        );
+
+      const color=
+        Cesium.Color.fromCssColorString(
+          layerColors[id] ||
+          '#66e4ff'
+        );
+
+      const entity=
+        state.viewer.entities.add({
+          position:
+            Cesium.Cartesian3.fromDegrees(
+              Number(lon),
+              Number(lat),
+              1000
+            ),
+
+          point:{
+            pixelSize:
+              id==='earthquakes'
+                ? Math.min(
+                    18,
+                    7+
+                    Number(props.mag||0)*1.7
+                  )
+                : 8,
+
+            color,
+            outlineColor:
+              Cesium.Color.BLACK,
+            outlineWidth:1,
+            disableDepthTestDistance:
+              5e7
+          },
+
+          properties:{
+            ...props,
+            layerId:id,
+            source:
+              props.source || id,
+            title,
+            latitude:lat,
+            longitude:lon,
+            severity
+          }
+        });
+
+      group.push(entity);
+
+      observations.push({
+        observationId:
+          `${id}:${props.id || props.eventId || `${lat}:${lon}:${title}`}`,
+
+        type:'Observation',
+        layerId:id,
+        title:String(title),
+        latitude:Number(lat),
+        longitude:Number(lon),
+        severity:String(severity),
+
+        observedAt:
+          props.date ||
+          props.time ||
+          props.updated ||
+          new Date().toISOString(),
+
+        source:
+          props.source || id,
+
+        provenance:
+          props.url ||
+          props.link ||
+          'public-feed'
+      });
+    }
+
+    state.feedEntities.set(id,group);
+
+    state.observations.unshift(
+      ...observations
+    );
+
+    if(state.observations.length>500){
+      state.observations.length=500;
+    }
+
+    const refreshedAt=
+      Date.now();
+
+    state.layerUpdatedAt.set(
+      id,
+      refreshedAt
+    );
+
+    refreshFeed();
+    refreshCounts();
+    updateRealityHud();
+
+    setSource(
+      `${id.toUpperCase()} ${group.length} OBJECTS · REFRESH ${new Date(refreshedAt).toLocaleTimeString()}`
+    );
+
+    window.dispatchEvent(
+      new CustomEvent(
+        'xunia:feed-refreshed',
+        {
+          detail:{
+            id,
+            count:group.length,
+            refreshedAt:
+              new Date(refreshedAt)
+              .toISOString()
+          }
+        }
+      )
+    );
+
+  }catch(error){
+    chip?.classList.add('error');
+
+    setSource(
+      `${id.toUpperCase()} REFRESH FAILED · LAST GOOD SNAPSHOT RETAINED`
+    );
+
+    console.warn(
+      '[XUNIA FEED]',
+      id,
+      error
+    );
+
+  }finally{
+    state.refreshInFlight.delete(id);
+    updateRealityHud();
+  }
+}
+
+function unloadLayer(id){for(const e of state.feedEntities.get(id)||[])state.viewer?.entities.remove(e);state.feedEntities.delete(id);state.layerUpdatedAt.delete(id);state.layerAttemptAt.delete(id);state.observations=state.observations.filter(o=>o.layerId!==id);refreshFeed();refreshCounts();updateRealityHud();if(id==='day_night'&&state.viewer)state.viewer.scene.globe.enableLighting=false;}
 function pushObservation(layerId,title,lat,lon,severity,props){const o={observationId:`${layerId}:${props.id||props.eventId||crypto.randomUUID()}`,type:'Observation',layerId,title:String(title),latitude:Number(lat),longitude:Number(lon),severity:String(severity),observedAt:props.date||props.time||props.updated||new Date().toISOString(),source:props.source||layerId,provenance:props.url||props.link||'public-feed'};state.observations.unshift(o);if(state.observations.length>500)state.observations.length=500;refreshFeed();}
 function refreshFeed(){ui.feed.innerHTML=state.observations.slice(0,24).map((o,i)=>`<div class="intel-item ${/high|critical|severe|5|6|7/.test(o.severity)?'severe':''}" data-observation="${i}"><b>${escapeHtml(o.title)}</b><span>${escapeHtml(o.layerId.toUpperCase())} // ${Number(o.latitude).toFixed(2)}, ${Number(o.longitude).toFixed(2)} // ${escapeHtml(o.observedAt)}</span></div>`).join('')||'<div class="empty-state"><b>NO LIVE EVENTS</b><span>Activate Earth layers.</span></div>';ui.eventCount.textContent=`${state.observations.length} EVENTS`;}
 function refreshCounts(){let n=state.mode==='universe'?state.worldMeshes.length:[...state.feedEntities.values()].reduce((a,b)=>a+b.length,0);ui.objectCount.textContent=formatNum(n);}
