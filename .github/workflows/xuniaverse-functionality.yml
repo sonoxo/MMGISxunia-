@@ -1,0 +1,43 @@
+name: XUNIAverse Functionality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'xuniaverse-forge/**'
+      - '.github/workflows/xuniaverse-functionality.yml'
+  push:
+    branches:
+      - 'feat/xuniaverse-functionality-pass'
+    paths:
+      - 'xuniaverse-forge/**'
+      - '.github/workflows/xuniaverse-functionality.yml'
+
+jobs:
+  functionality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: xuniaverse-forge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Validate catalogs
+        run: npm run validate
+      - name: Run browser functionality gate
+        run: npm run test:functionality
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xuniaverse-playwright-artifacts
+          path: |
+            xuniaverse-forge/test-results
+            xuniaverse-forge/playwright-report
+          if-no-files-found: ignore

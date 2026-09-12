@@ -1,13 +1,17 @@
 {
   "name": "xuniaverse-planetary-forge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Forkable multiverse renderer and live geospatial situational-awareness globe for XUNIAverse.",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "validate": "node validate.mjs"
+    "validate": "node validate.mjs",
+    "test:functionality": "playwright test tests/functionality.spec.mjs --project=chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
   },
   "engines": { "node": ">=22" }
 }
