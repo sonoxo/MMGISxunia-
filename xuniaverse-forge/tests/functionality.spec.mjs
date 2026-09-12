@@ -22,10 +22,12 @@ const githubEvents=[
 async function mockFunctionalApis(page){
   await page.route('**/api/github/state',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(githubState)}));
   await page.route('https://api.github.com/users/sonoxo/events/public?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(githubEvents)}));
-  await page.route('https://api.github.com/repos/sonoxo/*/issues?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{number:41,title:'Finish functionality pass',html_url:'https://github.com/sonoxo/MMGISxunia-/issues/41',updated_at:new Date().toISOString(),comments:2}])}));
+  await page.route('https://api.github.com/repos/**/issues?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{number:41,title:'Finish functionality pass',html_url:'https://github.com/sonoxo/MMGISxunia-/issues/41',updated_at:new Date().toISOString(),comments:2}])}));
   await page.route('**/api/geocode?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{display_name:'Richmond, Virginia, United States',lat:37.5407,lon:-77.436,type:'city',category:'place'}])}));
   await page.route('**/api/feed?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'FeatureCollection',features:[]})}));
 }
+
+const nav=(page,name)=>page.locator(`.xunia-nav button[data-tab="${name}"]`);
 
 test('command modules are operational and persist actions',async({page})=>{
   await mockFunctionalApis(page);
@@ -35,40 +37,40 @@ test('command modules are operational and persist actions',async({page})=>{
   await expect(page.locator('.boot')).toHaveClass(/off/,{timeout:5000});
   await expect(page.locator('#repoCount')).toHaveText('3',{timeout:8000});
 
-  await page.getByRole('button',{name:'CIVILIZATIONS'}).click();
+  await nav(page,'CIVILIZATIONS').click();
   await expect(page.locator('#xuniaModuleSurface h2')).toHaveText('CIVILIZATIONS');
   await expect(page.locator('#xuniaModuleSurface')).toContainText('INTERSTELLAR');
-  await page.getByRole('button',{name:'ALLOCATE 100'}).first().click();
+  await page.getByRole('button',{name:'ALLOCATE 100',exact:true}).first().click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('research +100');
 
-  await page.getByRole('button',{name:'BUILD'}).click();
+  await nav(page,'BUILD').click();
   await expect(page.locator('#xuniaModuleSurface h2')).toHaveText('BUILD');
-  await page.getByRole('button',{name:'QUEUE'}).first().click();
+  await page.getByRole('button',{name:'QUEUE',exact:true}).first().click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('REMOVE QUEUE');
   await expect(page.locator('#xuniaModuleSurface')).toContainText('Finish functionality pass');
 
-  await page.getByRole('button',{name:'MARKET'}).click();
+  await nav(page,'MARKET').click();
   await expect(page.locator('#xuniaModuleSurface h2')).toHaveText('MARKET');
-  await page.getByRole('button',{name:'INVEST 250'}).first().click();
+  await page.getByRole('button',{name:'INVEST 250',exact:true}).first().click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('domain-investment');
 
-  await page.getByRole('button',{name:'DAO'}).click();
+  await nav(page,'DAO').click();
   await page.locator('#daoTitle').fill('Ship functionality gate');
   await page.locator('#daoTag').fill('ENGINEERING');
   await page.locator('#daoBody').fill('Require real browser verification before completion.');
   await page.locator('#daoCreate').click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('Ship functionality gate');
-  await page.getByRole('button',{name:'YES'}).click();
+  await page.getByRole('button',{name:'YES',exact:true}).click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('YES 1');
 
-  await page.getByRole('button',{name:'RESEARCH'}).click();
+  await nav(page,'RESEARCH').click();
   await page.locator('#researchTitle').fill('Adapter reliability');
   await page.locator('#researchTag').fill('QA');
   await page.locator('#researchBody').fill('Verify public data sources and fallback behavior.');
   await page.locator('#researchSave').click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('Adapter reliability');
 
-  await page.getByRole('button',{name:'ABOUT'}).click();
+  await nav(page,'ABOUT').click();
   await expect(page.locator('#xuniaModuleSurface h2')).toContainText('SYSTEM HEALTH');
   await page.locator('#runHealth').click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('ms',{timeout:15000});
