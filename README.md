@@ -36,10 +36,33 @@
   MSL Curiosity Rover &nbsp;·&nbsp; InSight &nbsp;·&nbsp; Mars 2020 Perseverance Rover &nbsp;·&nbsp; Mars Helicopter (Ingenuity) &nbsp;·&nbsp; EMIT &nbsp;·&nbsp; MAIA &nbsp;·&nbsp; BioSCape &nbsp;·&nbsp; FireSense &nbsp;·&nbsp; Lunar VIPER &nbsp;·&nbsp; MGViz &nbsp;·&nbsp; SHIFT &nbsp;·&nbsp; FROZON &nbsp;·&nbsp; Where is the Rover &nbsp;·&nbsp; and more!
 </div>
 
+## XUNIA defensive-awareness extension
+
+This fork adds a governed XUNIA integration registry for authorized live telemetry, real-world geospatial situational awareness, sensor-health monitoring, anomaly detection, safety geofences, incident overlays, and historical playback.
+
+<div align="center">
+
+[![Open MCT](https://img.shields.io/github/last-commit/nasa/openmct?label=Open%20MCT)](https://github.com/nasa/openmct)
+[![CesiumJS](https://img.shields.io/github/last-commit/CesiumGS/cesium?label=CesiumJS)](https://github.com/CesiumGS/cesium)
+[![Stone Soup](https://img.shields.io/github/last-commit/dstl/Stone-Soup?label=Stone%20Soup)](https://github.com/dstl/Stone-Soup)
+[![Tracktable](https://img.shields.io/github/last-commit/sandialabs/tracktable?label=Tracktable)](https://github.com/sandialabs/tracktable)
+[![PostGIS](https://img.shields.io/github/last-commit/postgis/postgis?label=PostGIS)](https://github.com/postgis/postgis)
+[![MapLibre](https://img.shields.io/github/last-commit/maplibre/maplibre-gl-js?label=MapLibre)](https://github.com/maplibre/maplibre-gl-js)
+
+</div>
+
+The live badges update from upstream GitHub activity. MMGIS already provides Cesium-backed 3D visualization and PostGIS spatial storage; the XUNIA registry formalizes those roles and reserves adapter boundaries for Open MCT telemetry, Stone Soup tracking, Tracktable analytics, and MapLibre 2D operational layers.
+
+- [XUNIA defensive-awareness architecture](docs/XUNIA-DEFENSIVE-AWARENESS-OSS.md)
+- [Machine-readable integration registry](docs/xunia-defensive-awareness-oss.json)
+
+The extension is for visualization, spatial analysis, resilience, warning, and human-reviewed decision support. It does not implement weapon targeting, aimpoint generation, intercept guidance, fire-control, autonomous engagement, or weapons release.
+
 <div align="center"><img src="/docs/assets/images/divider.png" alt="---" width="100%" /></div>
 
 ## Table of Contents
 
+- [XUNIA defensive-awareness extension](#xunia-defensive-awareness-extension)
 - [Features](#features)
 - [Installation](#installation)
 - [Plugins](#plugins)

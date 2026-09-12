@@ -1,0 +1,39 @@
+{
+  "registry": "xunia-defensive-awareness-oss",
+  "version": "1.0.0",
+  "mode": "DEFENSIVE_AWARENESS_ONLY",
+  "ownerLayer": "XUNIA / MMGIS",
+  "upstreamAuthority": "GPT-DOUG-LLM / BLACK HOUSE",
+  "components": [
+    {"id":"openmct","repository":"https://github.com/nasa/openmct","role":["telemetry-visualization","historical-playback"],"defaultAuthority":"READ_ONLY"},
+    {"id":"cesium","repository":"https://github.com/CesiumGS/cesium","role":["3d-globe","terrain","geospatial-visualization"],"defaultAuthority":"VISUALIZATION_ONLY"},
+    {"id":"stone-soup","repository":"https://github.com/dstl/Stone-Soup","role":["track-fusion","state-estimation"],"defaultAuthority":"DECISION_SUPPORT_ONLY"},
+    {"id":"tracktable","repository":"https://github.com/sandialabs/tracktable","role":["movement-analytics","anomaly-detection"],"defaultAuthority":"DECISION_SUPPORT_ONLY"},
+    {"id":"postgis","repository":"https://github.com/postgis/postgis","role":["spatial-storage","safety-geofences","historical-tracks"],"defaultAuthority":"APPLICATION_SCOPED"},
+    {"id":"maplibre-gl-js","repository":"https://github.com/maplibre/maplibre-gl-js","role":["2d-operational-map","alert-layers"],"defaultAuthority":"VISUALIZATION_ONLY"}
+  ],
+  "xuniaResponsibilities": [
+    "2d-and-3d-geospatial-rendering",
+    "temporal-layer-playback",
+    "spatial-query",
+    "safety-geofence-visualization",
+    "sensor-and-track-layer-display",
+    "operator-facing-provenance"
+  ],
+  "allowed": {
+    "authorizedLiveTelemetry": true,
+    "realWorldGeospatialAwareness": true,
+    "sensorHealth": true,
+    "anomalyDetection": true,
+    "safetyGeofences": true,
+    "historicalPlayback": true
+  },
+  "prohibited": {
+    "weaponTargeting": true,
+    "aimpointGeneration": true,
+    "interceptGuidance": true,
+    "fireControl": true,
+    "autonomousEngagement": true,
+    "weaponsRelease": true
+  }
+}
