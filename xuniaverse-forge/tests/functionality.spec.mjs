@@ -29,14 +29,17 @@ async function mockFunctionalApis(page){
 
 const nav=(page,name)=>page.locator(`.xunia-nav button[data-tab="${name}"]`);
 
-test('command modules are operational and persist actions',async({page})=>{
+async function boot(page){
   await mockFunctionalApis(page);
   await page.goto('/');
   await expect(page).toHaveTitle(/XUNIAverse/);
   await expect(page.locator('#app')).toBeVisible();
   await expect(page.locator('.boot')).toHaveClass(/off/,{timeout:5000});
   await expect(page.locator('#repoCount')).toHaveText('3',{timeout:8000});
+}
 
+test('civilization build and market mechanics are operational',async({page})=>{
+  await boot(page);
   await nav(page,'CIVILIZATIONS').click();
   await expect(page.locator('#xuniaModuleSurface h2')).toHaveText('CIVILIZATIONS');
   await expect(page.locator('#xuniaModuleSurface')).toContainText('INTERSTELLAR');
@@ -53,7 +56,10 @@ test('command modules are operational and persist actions',async({page})=>{
   await expect(page.locator('#xuniaModuleSurface h2')).toHaveText('MARKET');
   await page.getByRole('button',{name:'INVEST 250',exact:true}).first().click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('domain-investment');
+});
 
+test('DAO research and adapter-health controls persist real state',async({page})=>{
+  await boot(page);
   await nav(page,'DAO').click();
   await page.locator('#daoTitle').fill('Ship functionality gate');
   await page.locator('#daoTag').fill('ENGINEERING');
@@ -74,7 +80,10 @@ test('command modules are operational and persist actions',async({page})=>{
   await expect(page.locator('#xuniaModuleSurface h2')).toContainText('SYSTEM HEALTH');
   await page.locator('#runHealth').click();
   await expect(page.locator('#xuniaModuleSurface')).toContainText('ms',{timeout:15000});
+});
 
+test('federated search and custom planet creation work end-to-end',async({page})=>{
+  await boot(page);
   await page.locator('#globalSearch').fill('Richmond');
   await page.locator('#globalSearch').press('Enter');
   await expect(page.locator('#xuniaModuleSurface h2')).toContainText('SEARCH // Richmond');
@@ -83,9 +92,10 @@ test('command modules are operational and persist actions',async({page})=>{
   await expect(page.locator('#xuniaModuleSurface')).not.toHaveClass(/open/);
 
   await page.locator('#createPlanetBtn').click();
+  await expect(page.locator('#planetModal')).toHaveClass(/open/);
   await page.locator('#planetName').fill('QA-12');
   await page.locator('#planetRole').fill('Verification');
-  await page.locator('#planetSave').click();
+  await page.getByRole('button',{name:'CREATE',exact:true}).click();
   await expect(page.locator('#planetStrip')).toContainText('QA-12');
 });
 
