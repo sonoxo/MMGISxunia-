@@ -153,11 +153,13 @@ router.get("/stream/:id", async (req, res) => {
 
       for (const position of positions) {
         if (closed) break;
-        const delay = position.timestamp * 1000 - Date.now();
-        if (delay > 0) {
-          await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 1000)));
+        const targetTime = position.timestamp * 1000;
+        while (!closed && targetTime > Date.now()) {
+          const remaining = targetTime - Date.now();
+          await new Promise((resolve) => setTimeout(resolve, Math.min(remaining, 1000)));
         }
-        if (position.timestamp * 1000 < Date.now() - 5000) continue;
+        if (closed) break;
+        if (targetTime < Date.now() - 5000) continue;
         res.write(
           `event: position\ndata: ${JSON.stringify({
             provider: "n2yo",
