@@ -1,0 +1,22 @@
+{
+  "uuid": "8ad6f81a-8185-4b0a-b1fd-99a5f377a4fb",
+  "id": "core-n2yo-orbit",
+  "name": "N2YOOrbit",
+  "display_name": "N2YO Live Orbital Data",
+  "aliases": [
+    "n2yo",
+    "orbit",
+    "satellite-live"
+  ],
+  "version": "1.0.0",
+  "type": "backend",
+  "tier": "core",
+  "overridable": true,
+  "routes": {
+    "prefix": "/api/n2yo",
+    "auth": "public"
+  },
+  "author": "XUNIA / GPT-DOUG",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/sonoxo/MMGISxunia-"
+}
