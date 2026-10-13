@@ -1,0 +1,42 @@
+name: XUNIAverse Production Verify
+
+on:
+  push:
+    branches:
+      - verify/xuniaverse-production-e516-20261013
+
+permissions:
+  contents: read
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE_URL: https://xuniaverse-public.vercel.app
+    steps:
+      - name: Verify public application shell
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE_URL/" -o /tmp/xunia.html
+          grep -q "XUNIAverse" /tmp/xunia.html
+      - name: Verify GitHub civilization endpoint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE_URL/api/github/state" -o /tmp/github.json
+          jq -e '.owner == "sonoxo" and (.repositoryCount | type == "number") and (.colonies | type == "array")' /tmp/github.json
+      - name: Verify USGS feed endpoint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE_URL/api/feed?id=earthquakes" -o /tmp/quakes.json
+          jq -e '.type == "FeatureCollection" and (.features | type == "array")' /tmp/quakes.json
+      - name: Verify geocoder endpoint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE_URL/api/geocode?q=Richmond%20Virginia" -o /tmp/geocode.json
+          jq -e 'type == "array" and length > 0 and .[0].display_name' /tmp/geocode.json
+      - name: Verify Palantir truth-status endpoint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 "$BASE_URL/api/palantir/status" -o /tmp/palantir.json
+          jq -e '.mode == "architecture-and-export-adapter" and (.writes | type == "boolean")' /tmp/palantir.json
