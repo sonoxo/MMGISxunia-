@@ -1,0 +1,3 @@
+import {feedData} from '../lib/api-shared.js';
+function send(res,status,data){res.statusCode=status;res.setHeader('content-type','application/json; charset=utf-8');res.setHeader('cache-control','no-store');res.setHeader('x-content-type-options','nosniff');res.end(JSON.stringify(data))}
+export default async function handler(req,res){if(req.method!=='GET')return send(res,405,{error:'read-only endpoint'});const url=new URL(req.url,'http://localhost');const id=url.searchParams.get('id');try{return send(res,200,await feedData(id))}catch(error){return send(res,error.status||502,{error:error.message||String(error),feed:id})}}
